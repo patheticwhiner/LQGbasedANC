@@ -107,13 +107,14 @@ figure;
 subplot(2, 1, 1);
 plot(1:N, u_history, 'DisplayName', '控制信号'); hold on;
 plot(1:N, anti_history, 'DisplayName', '反噪声信号');
+xlabel('样本n/samples'); ylabel('幅度');
 legend;
 grid on; 
-
 
 subplot(2, 1, 2);
 plot(1:N, d_history, 'DisplayName', '干扰信号d'); hold on;
 plot(1:N, -anti_history, 'DisplayName', '反噪声信号');
 plot(1:N, y_history, 'DisplayName', '残余信号 y');
+xlabel('样本n/samples'); ylabel('幅度');
 legend;
 grid on;
