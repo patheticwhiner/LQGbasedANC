@@ -21,19 +21,29 @@ LQGdemo.m：将上述两部分程序生成的状态空间模型合并为增广�
 若系统是线性的，且性能泛函是状态变量/控制变量的二次型函数的积分，则这样的最优控制问题称为线性二次型最优控制问题（Linear Quadratic Optimal Problem）。由于二次型性能指标具有鲜明的物理意义，它代表了大量工程实际问题中提出的性能指标要求，并且在数学处理上比较简单，易于通过状态线性反馈实现闭环最优控制，便于工程师先，因而在实际工程问题中得到了广泛应用。
 
 + **二次型最优控制问题**：对于以下**线性系统**，确定**最优控制律**$u^*(t)$，使**二次型性能指标**最小。就实际工程应用而言，此性能指标较全面地体现了对复杂控制系统的性能要求。
-  + $ L_x = \frac{1}{2} \boldsymbol{x}^\top(t)\boldsymbol{Q}(t)\boldsymbol{x}(t) $体现对动态过程的要求。
-  + $ L_u = \frac{1}{2} \boldsymbol{u}^\top(t)\boldsymbol{R}(t)\boldsymbol{u}(t) $体现对控制能量的限制。
++   $L_x = \frac{1}{2} \boldsymbol{x}^\top(t)\boldsymbol{Q}(t)\boldsymbol{x}(t)$ 体现对动态过程的要求。
++   $L_u = \frac{1}{2} \boldsymbol{u}^\top(t)\boldsymbol{R}(t)\boldsymbol{u}(t)$ 体现对控制能量的限制。
 
 $$
 \dot{\boldsymbol{x}}(t) = \boldsymbol{A}(t)\boldsymbol{x}(t) + \boldsymbol{B}(t)\boldsymbol{u}(t), \quad \boldsymbol{x}(t_0) = \boldsymbol{x}_0\\
 \boldsymbol{y}(t) = \boldsymbol{C}(t)\boldsymbol{x}(t)
 $$
 
-式中，$\boldsymbol{x} \in \mathbb{R}^n$, $\boldsymbol{u} \in \mathbb{R}^r$, $\boldsymbol{y} \in \mathbb{R}^m$，$\boldsymbol{A}(t)\in \mathbb{R}^{n \times n}$、$\boldsymbol{B}(t)\in \mathbb{R}^{n \times r}$和$\boldsymbol{C}(t)\in \mathbb{R}^{m \times n}$。
+式中，
+$\boldsymbol{x} \in \mathbb{R}^n$, $\boldsymbol{u} \in \mathbb{R}^r$, $\boldsymbol{y} \in \mathbb{R}^m$，
+$\boldsymbol{A}(t)\in \mathbb{R}^{n \times n}$、
+$\boldsymbol{B}(t)\in \mathbb{R}^{n \times r}$和
+$\boldsymbol{C}(t)\in \mathbb{R}^{m \times n}$。
+
 $$
-J = \frac{1}{2} \boldsymbol{x}^\top(t_f)\boldsymbol{Q}_f \boldsymbol{x}(t_f) + \frac{1}{2} \int_{t_0}^{t_f} \left[ \boldsymbol{x}^\top(t)\boldsymbol{Q}(t)\boldsymbol{x}(t) + \boldsymbol{u}^\top(t)\boldsymbol{R}(t)\boldsymbol{u}(t) \right] \text{d}t
+J=\frac{1}{2}\boldsymbol{x}^\top(t_f)\boldsymbol{Q}_f\boldsymbol{x}(t_f)+\frac{1}{2}\int_{t_0}^{t_f}[\boldsymbol{x}^\top(t)\boldsymbol{Q}(t)\boldsymbol{x}(t)+\boldsymbol{u}^\top(t)\boldsymbol{R}(t)\boldsymbol{u}(t)]\text{d}t
 $$
-式中，$\boldsymbol{Q}_f,\ \boldsymbol{Q}(t)\in \mathbb{R}^{n\times n} \geq 0$，$\boldsymbol{R}(t)\in\mathbb{R}^{r\times r} >0$均为对称矩阵。
+
+
+式中，
+$\boldsymbol{Q}_f,\ \boldsymbol{Q}(t)\in \mathbb{R}^{n\times n} \geq 0$，
+$\boldsymbol{R}(t)\in\mathbb{R}^{r\times r} >0$
+均为对称矩阵。
 
 *注：LQ性能指标最小的物理意义是：在整个时间区间 $[t_0,t_f]$ 内，综合考虑过程中偏差、控制消耗的能量和终值误差3个方面总的结果要最小。
 
@@ -44,10 +54,20 @@ $$
 ---
 
 *注：工程上所关心的另一类更广泛的问题时：除保证有限时间内系统的**非零初态响应最优性**之外，还要求系统具有**保持平衡状态**的能力；既有**最优性要求**又有**稳定性要求**。此时如果将调节器问题推广到无限时间的情况，就可以在无限时间内既考察**实际上有限时间内的响应**，又考察**系统的稳定性**。
+
 $$
-\dot{\boldsymbol{x}}(t) = \boldsymbol{A}(t)\boldsymbol{x}(t) + \boldsymbol{B}(t)\boldsymbol{u}(t), \quad \boldsymbol{x}(t_0) = \boldsymbol{x}_0\\
-\boldsymbol{x} \in \mathbb{R}^n,\ \boldsymbol{u} \in \mathbb{R}^r,\ \boldsymbol{A}(t)\in \mathbb{R}^{n \times n},\ \boldsymbol{B}(t)\in \mathbb{R}^{n \times r}\\
-J = \frac{1}{2} \int_{t_0}^{\infty} \left[ \boldsymbol{x}^\top(t)\boldsymbol{Q}(t)\boldsymbol{x}(t) + \boldsymbol{u}^\top(t)\boldsymbol{R}(t)\boldsymbol{u}(t) \right] \text{d}t\\
+\dot{\boldsymbol{x}}(t) = \boldsymbol{A}(t)\boldsymbol{x}(t) + \boldsymbol{B}(t)\boldsymbol{u}(t), \quad \boldsymbol{x}(t_0) = \boldsymbol{x}_0
+$$
+
+$$
+\boldsymbol{x} \in \mathbb{R}^n,\ \boldsymbol{u} \in \mathbb{R}^r,\ \boldsymbol{A}(t)\in \mathbb{R}^{n \times n},\ \boldsymbol{B}(t)\in \mathbb{R}^{n \times r}
+$$
+
+$$
+J = \frac{1}{2} \int_{t_0}^{\infty} \left[ \boldsymbol{x}^\top(t)\boldsymbol{Q}(t)\boldsymbol{x}(t) + \boldsymbol{u}^\top(t)\boldsymbol{R}(t)\boldsymbol{u}(t) \right] \text{d}t
+$$
+
+$$
 \boldsymbol{u}^*(t)=\arg \min_u J
 $$
 
@@ -57,7 +77,9 @@ $$
 
   + **定常线性最优调节器**
 
-    $\boldsymbol{Q}\in \mathbb{R}^{n\times n}$，$\boldsymbol{R}\in\mathbb{R}^{r\times r} >0$均为常值对称矩阵，此时存在唯一的最优控制：$\boldsymbol{u}^*(t)=-\boldsymbol{R}^{-1}(t)\boldsymbol{B}^\top \boldsymbol{P}\boldsymbol{x}(t)$
+    $\boldsymbol{Q}\in \mathbb{R}^{n\times n}$，
+    $\boldsymbol{R}\in\mathbb{R}^{r\times r} >0$均为常值对称矩阵，此时存在唯一的最优控制：
+    $\boldsymbol{u}^*(t)=-\boldsymbol{R}^{-1}(t)\boldsymbol{B}^\top \boldsymbol{P}\boldsymbol{x}(t)$
 
 ### 1.2 LQR设计
 
@@ -80,15 +102,18 @@ MATLAB控制系统工具箱中提供了求解线性二次型（LQ）最优控制
 [卡尔曼滤波](https://ww2.mathworks.cn/help/control/ug/kalman-filtering.html)
 
 <img src="assets\kalmdemo_02.png" width = 70% />
+
 $$
 \begin{align}
 x(k+1)=&Ax(k)+Bu(k)+Gw(k)\\
 y(k)=&C x(k)+v(k)
 \end{align}
 $$
+
 其中 $w(k),\ v(k)$ 均为零均值高斯白噪声，协方差为： $\mathbb{E}[w(k)w(k)^\top]=\boldsymbol{Q}$， $\mathbb{E}[v(k)v(k)^\top]=\boldsymbol{R}$， $\mathbb{E}[w(k)v(k)^\top]=0$。
 
 状态估计：
+
 $$
 \begin{align}
 \hat{x}^+(k)=&\hat{x}^-(k)+L[y(k)-C\hat{x}^-(k)-Du(k)]\\
@@ -119,12 +144,14 @@ $$
 3. 通过连接LQ最最优增益与Kalman Filter构建LQG设计。
 
 <img src="assets\regulator.png" width = 60% />
+
 $$
 \begin{align}
     x(k+1)=&Ax(k)+Bu(k)+Gw(k)\\
     y(k)=&Cx(k)+Du(k)+Hw(k)+v(k)
 \end{align}
 $$
+
 对于上述系统设计分为两步：
 
 + LQR：$u(k)=-K{x}(k)$
@@ -231,6 +258,7 @@ x\\ x_w
 $$
 
 记作：
+
 $$
 \begin{align}
 \tilde{x}(k+1)=&\tilde{A}\tilde{x}(k)+\tilde{B}u(k)+\tilde{G}e(k)\\
@@ -238,8 +266,8 @@ y(k)=&\tilde{C}\tilde{x}+v(k)
 \end{align}
 $$
 
-+ LQR：$u(k)=-K\tilde{x}(k)$
-+ Kalman Filter：$\tilde{x}(k+1)=\tilde{A}\tilde{x}(k)+\tilde{B}u(k)+L(y(k)-\tilde{C}x(k))+Lv(k)$
++ LQR： $u(k)=-K\tilde{x}(k)$ 
++ Kalman Filter： $\tilde{x}(k+1)=\tilde{A}\tilde{x}(k)+\tilde{B}u(k)+L(y(k)-\tilde{C}x(k))+Lv(k)$ 
 
 ### 4.3 LQR+LQE设计
 
