@@ -108,11 +108,11 @@ $$
 
   `[kest,L,P] = kalman(sys,Qn,Rn,Nn)` This MATLAB function creates a state-space model kest of the Kalman estimator given the plant model sys and the noise covariance data Qn, Rn, Nn (matrices Q, R, N described in Description).
 
-### 1.4 LQG设计
+### 1.4 用于调节问题的LQG设计
 
 [线性二次高斯 (LQG) 设计](https://ww2.mathworks.cn/help/control/getstart/linear-quadratic-gaussian-lqg-design.html)
 
-线性二次高斯（Linear Quadratic Gaussian）控制是一种用于设计伺服控制器的现代状态空间方法，允许我们权衡调节/过程扰动和测量噪声。LQG控制设计遵循以下步骤：
+线性二次高斯（Linear Quadratic Gaussian）控制是一种用于设计伺服控制器的现代状态空间方法，允许我们权衡调节/过程扰动和测量噪声。LQR与Kalman Filter的设计可使用分离性原理，LQG控制设计遵循以下步骤：
 
 1. 构造LQ最优增益；
 2. 构造Kalman Filter/状态估计器；
@@ -130,11 +130,41 @@ $$
 + LQR：$u(k)=-K{x}(k)$
 + Kalman Filter：${x}(k+1)={A}{x}(k)+{B}u(k)+L[y(k)-{C}x(k)]+Lv(k)$
 
+---
+
 基于 `lqg` 函数的一步到位的快速设计方法，需满足以下条件：
 
-- 需要最优的 LQG 控制器，并且 $\mathbb{E}(wv^\top)$ 或 $H$ 为非零值。<font color = red>非常有可能不适用于存在G矩阵的情况</font>
+<img src="assets\lqg1.png" width =50% />
+
+
+
+- 需要最优的 LQG 控制器，并且 $\mathbb{E}(wv^\top)$ 或 $H$ 为非零值。
 - 所有已知（确定性）输入均为控制输入，所有输出均为测得值。
 - 积分器状态的加权独立于被控对象的状态和控制输入。
+
+被控系统为：
+$$
+\dot{x}=Ax+Bu+w\\
+y=Cx+Du+v
+$$
+还需预先制定指标函数的权重矩阵 $Q_{xu}$ 和过程噪声与测量噪声的协方差矩阵 $Q_{wv}$，具体而言有：
+$$
+J=\mathbb{E}\{\lim_{\tau\rightarrow\infty}\cfrac{1}{\tau}\int_0^\tau [x^\top,u^\top]^\top Q_{xu}\begin{bmatrix}x\\u\end{bmatrix}\text{d}t\}\\
+Q_{wv} = \mathbb{E}\left(\begin{bmatrix}w\\v\end{bmatrix}[w^\top, v^\top]^\top\right)
+$$
+为了使LQG指令可用于设计伺服控制器，还可预先指定误差向量的权重矩阵 $Q_i$，此时指标函数为：
+$$
+J=\mathbb{E}\{\lim_{\tau\rightarrow\infty}\cfrac{1}{\tau}\int_0^\tau \left([x^\top,u^\top]^\top Q_{xu}\begin{bmatrix}x\\u\end{bmatrix}+x_i^\top Q_i x_i\right)\text{d}t\}\\
+x_i=\int(r-y)
+$$
+
+---
+
+若需要引入更多的设计灵活性以设计LQG调节器应当使用 `lqr` ， `kalman` 和 `lqgreg` 指令，相应的条件如下：
+
++ 可任意指定过程噪声矩阵G和测量噪声矩阵H
++ 可存在非控制输入的确定性干扰或未测量输出
++ 支持对积分器状态、系统状态和控制量的差异化加权
 
 ## 2 带限噪声生成
 
@@ -191,7 +221,21 @@ y(k)=&C x(k)+Du(k)+Fw(k)
 \end{align}
 $$
 
+### 3.3 基于系统辨识工具箱
+
+[利用Simulink实现系统模型辨识-连续扫频 - 知乎](https://zhuanlan.zhihu.com/p/598926217)
+
+[MATLAB系统辨识工具箱（ARMAX模型） - 知乎](https://zhuanlan.zhihu.com/p/568419600)
+
 ## 4 基于LQR/LQG的主动控制
+
+### 4.0 理论说明
+
+LQR具有很好的稳定裕度，但在和Kalman Filter组成LQG之后，闭环系统的稳定裕度不复存在。
+
+LQG系统虽然是“最优”的，担现实中极易因为建模误差和扰动而导致不稳定。因此，纯粹的LQG并不是一种很实用的控制策略，只适用于简单的、不确定性小的系统，或者适用于为了先实现控制随便找个算法凑合一下的情况。
+
+为了解决LQG的鲁棒稳定性差的问题，有人在LQG的基础上提出了LTR（回路传递恢复）作为补充，通过频域分析，设计闭环零极点位置，从而保证了系统的鲁棒稳定性。也有人干脆放弃LQG，发展出了其他鲁棒控制算法，如H∞。
 
 ### 4.1 ANC问题制定
 
@@ -282,14 +326,28 @@ Rn = 1e-4 * eye(size(C, 1));  % 测量噪声协方差
 
 ### 4.4 直接LQG设计（一步到位）
 
-TBD，有可能无法一步到位设计。
+`lqg` 函数一步到位设计仅适用于常规的状态反馈控制，不适用于输出调节问题。
+
+<font color = red>调节问题可看作r=0的伺服问题，那么lqg能否间接用于输出调节？</font>
+
+### 4.5 基于Simulink的仿真
+
+<img src="assets\simLQG.png" width=80% />
 
 ## 5 不足与改进建议
 
 1. 所生成的传递函数究竟是连续复频域传递函数还是离散复频域传函？所生成的状态空间矩阵属于连续时间模型还是离散时间模型？仍有待理论说明。
 2. 未对多种条件作重复试验，实验条件特殊，且设置比较随意，不确定推广到其它数据是否适用。
+
+   例如，在仿真实验中，所涉及的测量误差 v 需远小于过程误差，才能保证具有较好的调节特性。若两者量级相对接近，则起不到任何调节的xiao
 3. 未讨论LQR主动控制的局限性，未说明为什么要引入LQG；未探究LQR与LQG反馈控制的带宽限制。
 4. 对于LQR，LQG设计的参数（权重矩阵选取）未提供理论参考，未探究超出建议值会发生什么
+
+### 5.1 带限噪声的作用
+
+### 5.2 辨识方法的选取
+
+### 5.3 控制方法的限制
 
 ## 参考资料
 
@@ -299,3 +357,6 @@ TBD，有可能无法一步到位设计。
 
 [3] MathWorks. State-space control design: LQG/LQR and pole-placement algorithms[EB/OL]. (n.d.) [2025-04-05]. https://www.mathworks.com/help/control/ref/lqr.html.
 
+[4] 三脚猫Frank. LQR控制器— 线性二次型调节器 Linear Quadratic Regulator[EB/OL]. (2021-12-17). [2025-04-07]. https://zhuanlan.zhihu.com/p/139145957
+
+[5] [尚戈继](https://www.zhihu.com/people/moon-half). LQG输出调节控制Matlab仿真实例[EB/OL]. (2020-12-12). [2025-04-07]. https://zhuanlan.zhihu.com/p/338340273

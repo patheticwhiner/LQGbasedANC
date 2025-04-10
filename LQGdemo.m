@@ -11,15 +11,15 @@ load('systemIdentification.mat');
 %% 耦合系统
 % 增广状态矩阵
 n = size(Af, 1);    % 原系统状态维度
-p = size(A_w2, 1);  % 干扰模型状态维度
-A = blkdiag(Af, A_w2);  % 块对角矩阵 [Af 0; 0 A_w2]
+p = size(Aw, 1);  % 干扰模型状态维度
+A = blkdiag(Af, Aw);  % 块对角矩阵 [Af 0; 0 Aw]
 
 % 增广输入矩阵
 B = [Bf; zeros(p, size(Bf, 2))];  % 原系统控制输入通道
-G = [zeros(n, size(B_w2, 2)); B_w2];  % 干扰输入通道
+G = [zeros(n, size(Bw, 2)); Bw];  % 干扰输入通道
 
 % 增广输出矩阵
-C = [Cf , C_w2];
+C = [Cf , Cw];
 
 %% 设计LQR控制器
 % 状态权重矩阵 Q（半正定）
@@ -42,8 +42,8 @@ end
 
 %% 设计卡尔曼滤波器（状态估计器）
 % 假设过程噪声协方差矩阵和测量噪声协方差矩阵
-Qn = 2;  % 过程噪声协方差
-Rn = 1e-4 * eye(size(C, 1));  % 测量噪声协方差
+Qn = 200;  % 过程噪声协方差
+Rn = 1e-2 * eye(size(C, 1));  % 测量噪声协方差
 
 % 使用离散卡尔曼滤波器求解最优增益矩阵
 [L, ~, ~] = dlqe(A, G, C, Qn, Rn);
@@ -75,7 +75,7 @@ x_hat_history = zeros(n + p, N);  % 状态估计轨迹记录
 y_history = zeros(size(Cf, 1), N);  % 输出轨迹记录
 u_history = zeros(1, N);  % 控制输入记录
 
-%% 闭环控制仿真
+%% 闭环控制仿真(一)
 for k = 1:N
     % 生成过程噪声和测量噪声
     e = sqrt(Qn) * randn(size(G, 2), 1);  % 过程噪声
@@ -100,8 +100,65 @@ for k = 1:N
 end
 
 % 计算干扰信号和反噪声信号
-d_history = C_w2 * x_history(n+1:end, :);  % 干扰信号
+d_history = Cw * x_history(n+1:end, :);  % 干扰信号
 anti_history = Cf * x_history(1:end-p, :);  % 反噪声信号
+
+figure;
+subplot(2, 1, 1);
+plot(1:N, u_history, 'DisplayName', '控制信号'); hold on;
+plot(1:N, anti_history, 'DisplayName', '反噪声信号');
+xlabel('样本n/samples'); ylabel('幅度');
+legend;
+grid on; 
+
+subplot(2, 1, 2);
+plot(1:N, d_history, 'DisplayName', '干扰信号d'); hold on;
+plot(1:N, -anti_history, 'DisplayName', '反噪声信号');
+plot(1:N, y_history, 'DisplayName', '残余信号 y');
+xlabel('样本n/samples'); ylabel('幅度');
+legend;
+grid on;
+
+%% 闭环控制仿真（二）
+N = 2000;                    % 仿真步数
+xf = zeros(n, 1);          % 原系统状态初始化
+xw = zeros(p, 1);         % 干扰模型状态初始化
+x_hat = zeros(n + p, 1);      % 增广状态估计初始化
+xf_history = zeros(n, N);  % 原系统状态轨迹记录
+xw_history = zeros(p, N); % 干扰模型状态轨迹记录
+x_hat_history = zeros(n + p, N);  % 增广状态估计轨迹记录
+y_history = zeros(size(Cf, 1), N);  % 输出轨迹记录
+u_history = zeros(1, N);  % 控制输入记录
+
+for k = 1:N
+    % 生成干扰模型的过程噪声
+    ew = sqrtm(Qn) * randn(size(Bw, 2), 1);  % 干扰过程噪声
+    v = sqrtm(Rn) * randn(size(C, 1), 1);  % 测量噪声
+
+    % 干扰模型动态更新
+    xw = Aw * xw + Bw * ew;  % 干扰模型状态更新
+    d = Cw * xw;  % 干扰信号
+
+    % 原系统动态更新
+    u = -K * x_hat;  % 使用估计状态进行反馈控制
+    xf = Af * xf + Bf * u;  % 原系统状态更新
+    y = Cf * xf + d + v;  % 系统输出（包含干扰和测量噪声）
+
+    % 卡尔曼滤波器更新（状态估计）
+    x_hat = A * x_hat + B * u;  % 预测
+    x_hat = x_hat + L * (y - C * x_hat);  % 校正
+
+    % 记录状态和输出
+    xf_history(:, k) = xf;
+    xw_history(:, k) = xw;
+    x_hat_history(:, k) = x_hat;
+    y_history(:, k) = y;
+    u_history(k) = u;
+end
+
+% 计算干扰信号和反噪声信号
+d_history = Cw * xw_history;  % 干扰信号
+anti_history = Cf * xf_history;  % 反噪声信号
 
 figure;
 subplot(2, 1, 1);
