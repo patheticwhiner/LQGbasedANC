@@ -2,7 +2,7 @@
 clear; close all; clc;
 
 %% 导入模型
-load('ARMAX_SYSID_30303022.mat');
+load('..\dataset\ARMAX_SYSID_30303022.mat');
 % 定义对象的标称模型
 d = ARMAXmodel.orders(4);
 A_poly = ARMAXmodel.model.A;
@@ -87,24 +87,25 @@ if rank_ctrb == nA
     
     % LQR方法设计控制器
     if exist('lqr', 'file') == 2
-        Q_ctrl = eye(nA);  % 状态权重矩阵
-        R_ctrl = 1;        % 控制输入权重
+        Q_ctrl = eye(nA)*1e-6;  % 状态权重矩阵
+        R_ctrl = 1000;        % 控制输入权重
         [K_lqr, ~, lqr_cl_poles] = lqr(Ao, Bo, Q_ctrl, R_ctrl);
+        K = K_lqr; % 增加此行
+        actual_cl_poles = lqr_cl_poles; % 增加此行
         
         fprintf('LQR闭环极点: ');
         for i = 1:length(lqr_cl_poles)
             if isreal(lqr_cl_poles(i))
                 fprintf('%.4f ', lqr_cl_poles(i));
             else
-                fprintf('%.4f±%.4fj ', real(lqr_cl_poles(i)), abs(imag(lqr_cl_poles(i))));
+                fprintf('%.4f±%.4fj ', real(lqr_cl_poles(i)), abs(imag(lqr_cl_poles(i)))); 
             end
         end
         fprintf('\n');
     end
     
     % 计算前馈增益（用于跟踪参考信号）
-    % 对于单位阶跃输入，计算稳态增益
-    Nbar = 1 / (Co * inv(eye(nA) - Ao + Bo*K) * Bo);
+    Nbar = 1 / (Co * inv(eye(nA) - Ao + Bo*K) * Bo); % 用K_lqr或K
     fprintf('前馈增益 Nbar = %.4f\n', Nbar);
     
 else
